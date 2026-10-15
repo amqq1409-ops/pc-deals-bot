@@ -105,6 +105,9 @@ class BaseScraper:
                 r = self.session.get(url, timeout=25, **kw)
                 if r.status_code == 200 and len(r.text) > 2000:
                     return r
+                if r.status_code == 403:
+                    log.warning("%s: HTTP 403 (محظور) — لا فائدة من إعادة المحاولة", self.name)
+                    return None
                 log.warning("%s: HTTP %s (محاولة %d) %s", self.name, r.status_code, attempt + 1, url)
             except requests.RequestException as e:
                 log.warning("%s: خطأ شبكة %s", self.name, e)
@@ -662,8 +665,11 @@ def collect(cfg: dict) -> tuple[List[Product], Dict[str, int]]:
             continue
         scraper = SCRAPERS[store]()
         per_store[store] = 0
+        empty_streak = 0
         for cat_name, cat in cfg["categories"].items():
             for q in cat["queries"]:
+                if empty_streak >= 3:
+                    break  # المتجر غالباً يحظرنا: نتخطاه بدل إضاعة الوقت
                 try:
                     found = scraper.search(q)
                 except Exception:  # لا نوقف كل شيء بسبب متجر واحد
@@ -671,6 +677,7 @@ def collect(cfg: dict) -> tuple[List[Product], Dict[str, int]]:
                     continue
                 log.info("%s | %s | '%s' -> %d نتيجة", store, cat_name, q, len(found))
                 per_store[store] += len(found)
+                empty_streak = 0 if found else empty_streak + 1
                 for p in found:
                     products.setdefault(p.key, p)
     return list(products.values()), per_store
