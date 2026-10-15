@@ -1,0 +1,137 @@
+# ======= إعدادات صائد صفقات البي سي =======
+
+stores:            # فعّل/عطّل المتاجر
+  amazon_sa: true
+  noon: true
+  jarir: true
+  extra: false      # تجريبي: غير مجرَّب على الموقع الحي، فعّله بعد اختباره بـ --dry-run
+
+min_discount_pct: 30        # أقل خصم يُعتبر صفقة
+min_score: 55               # أقل درجة جودة/سعر (من 100)
+max_results_per_run: 10     # أقصى عدد رسائل في كل تشغيل
+resend_if_drop_pct: 5       # أعد إرسال نفس المنتج فقط لو نزل سعره أكثر من هذه النسبة عن آخر إرسال
+max_discount_suspicious: 90 # خصم أعلى من هذا بدون تقييمات = غالباً سعر أصلي وهمي (يُستبعد)
+
+# الأوزان (المجموع 100)
+weights:
+  discount: 45
+  rating: 25
+  reviews: 10
+  brand: 10
+  price_history: 10
+
+min_rating: 4.0             # أقل تقييم مقبول (المنتج بلا تقييم يُقبل فقط لو الماركة موثوقة وخصمه معقول)
+min_reviews: 10
+
+trusted_brands:
+  - Logitech
+  - Razer
+  - Corsair
+  - SteelSeries
+  - HyperX
+  - ASUS
+  - ROG
+  - MSI
+  - Gigabyte
+  - Aorus
+  - NVIDIA
+  - AMD
+  - Sapphire
+  - Zotac
+  - XFX
+  - PowerColor
+  - PNY
+  - Palit
+  - Gainward
+  - Inno3D
+  - Redragon
+  - Keychron
+  - Glorious
+  - Cooler Master
+  - Lenovo Legion
+  - Royal Kludge
+  - Akko
+  - Ducky
+  - Endgame Gear
+  - Zowie
+  - BenQ
+  - Kingston
+  - Crucial
+  - Samsung
+  - WD
+  - Western Digital
+  - Seagate
+  - G.Skill
+  - Lexar
+  - TeamGroup
+  - ADATA
+  - XPG
+  - LG
+  - Alienware
+  - AOC
+  - Acer
+  - Predator
+  - ViewSonic
+
+categories:
+  keyboard:
+    label: "كيبورد"
+    emoji: "⌨️"
+    queries: ["gaming keyboard", "mechanical keyboard"]
+    include_any: ["keyboard"]
+    exclude_any: ["cover", "skin", "protector", "keycap set", "keycaps set", "wrist rest",
+                  "piano", "midi", "for ipad", "for macbook", "kids", "stand", "case for",
+                  "sticker", "cleaner", "puller"]
+    min_price: 120
+    max_price: 3000
+
+  mouse:
+    label: "ماوس"
+    emoji: "🖱️"
+    queries: ["gaming mouse", "wireless gaming mouse"]
+    include_any: ["mouse", "mice"]
+    exclude_any: ["pad", "mousepad", "skates", "grip tape", "bungee", "cover", "case for",
+                  "trackball", "bluetooth travel", "for ipad", "stand", "cleaner"]
+    min_price: 80
+    max_price: 2000
+
+  gpu:
+    label: "كرت شاشة"
+    emoji: "🎮"
+    queries: ["graphics card", "RTX graphics card", "Radeon RX graphics card"]
+    include_any: ["rtx", "gtx", "radeon", "rx 6", "rx 7", "rx 9", "graphics card", "gpu", "arc a", "arc b"]
+    exclude_any: ["laptop", "notebook", "cable", "bracket", "riser", "support", "holder",
+                  "backplate", "water block", "fan only", "adapter", "extension", "pc case",
+                  "gaming pc", "desktop pc", "prebuilt", "monitor"]
+    min_price: 400
+    max_price: 15000
+
+  ram:
+    label: "رام"
+    emoji: "🧠"
+    queries: ["DDR5 desktop RAM", "DDR4 desktop RAM"]
+    include_any: ["ddr4", "ddr5"]
+    exclude_any: ["laptop", "notebook", "sodimm", "so-dimm", "gddr", "graphics card", "rtx", "radeon",
+                  "gaming pc", "desktop pc", "motherboard", "server", "ecc"]
+    min_price: 100
+    max_price: 3000
+
+  ssd:
+    label: "SSD"
+    emoji: "💾"
+    queries: ["NVMe SSD", "internal SSD"]
+    include_any: ["ssd", "nvme"]
+    exclude_any: ["enclosure", "case", "adapter", "heatsink", "external", "portable", "caddy", "dock",
+                  "laptop", "notebook", "gaming pc", "desktop pc", "cable", "bracket"]
+    min_price: 100
+    max_price: 3000
+
+  monitor:
+    label: "شاشة"
+    emoji: "🖥️"
+    queries: ["gaming monitor", "144Hz monitor"]
+    include_any: ["monitor"]
+    exclude_any: ["arm", "mount", "stand", "bracket", "cable", "cover", "protector", "tv ", "portable",
+                  "laptop", "gaming pc", "desktop pc", "keyboard", "mouse"]
+    min_price: 300
+    max_price: 8000
