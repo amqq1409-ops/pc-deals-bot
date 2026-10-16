@@ -90,6 +90,7 @@ class BaseScraper:
 
     def __init__(self, delay: float = 2.0):
         self.delay = delay
+        self.deadline = None  # وقت انتهاء ميزانية هذا المتجر (monotonic)
         self.session = requests.Session()
         self.session.headers.update({
             "User-Agent": random.choice(USER_AGENTS),
@@ -100,9 +101,12 @@ class BaseScraper:
     def get(self, url: str, **kw) -> requests.Response | None:
         """GET مع إعادة محاولة بسيطة. يرجع None عند الحظر/الفشل."""
         for attempt in range(3):
+            if self.deadline and time.monotonic() > self.deadline:
+                log.warning("%s: انتهت ميزانية الوقت لهذا المتجر", self.name)
+                return None
             try:
                 time.sleep(self.delay + random.random())
-                r = self.session.get(url, timeout=25, **kw)
+                r = self.session.get(url, timeout=15, **kw)
                 if r.status_code == 200 and len(r.text) > 2000:
                     return r
                 if r.status_code == 403:
@@ -664,6 +668,7 @@ def collect(cfg: dict) -> tuple[List[Product], Dict[str, int]]:
         if not enabled or store not in SCRAPERS:
             continue
         scraper = SCRAPERS[store]()
+        scraper.deadline = time.monotonic() + cfg.get("store_time_budget_sec", 240)
         per_store[store] = 0
         empty_streak = 0
         for cat_name, cat in cfg["categories"].items():
@@ -696,6 +701,7 @@ def run(cfg: dict, state: State, tg: Telegram, only_stores: list[str] | None = N
                          f"غالباً تم حظر الطلبات أو تغيّر تصميم الموقع. راجع سجل التشغيل في GitHub Actions.")
 
     deals: List[Product] = []
+    classified: List[Product] = []
     for p in products:
         cat = classify(p, cfg["categories"])
         if not cat:
@@ -703,6 +709,7 @@ def run(cfg: dict, state: State, tg: Telegram, only_stores: list[str] | None = N
         p.category = cat
         hist = state.history(p.key)
         score_product(p, cfg, hist)
+        classified.append(p)
         state.record(p)
         if is_good_deal(p, cfg) and state.should_send(p, cfg["resend_if_drop_pct"]):
             deals.append(p)
@@ -715,6 +722,20 @@ def run(cfg: dict, state: State, tg: Telegram, only_stores: list[str] | None = N
             state.mark_sent(p)
             sent += 1
     log.info("تم فحص %d منتج، صفقات مؤهلة %d، أُرسل %d", len(products), len(deals), sent)
+
+    # تقرير يصلك على تلقرام عند التشغيل اليدوي فقط (لتتأكد أن كل شيء يعمل)
+    if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
+        lines = ["📊 <b>تقرير التشغيل اليدوي</b>", ""]
+        for st, n in per_store.items():
+            lines.append(f"• {STORE_NAMES_AR.get(st, st)}: {n} منتج" + ("  ⚠️ لا نتائج (محظور؟)" if n == 0 else ""))
+        lines.append(f"✅ منتجات مطابقة للفئات: {len(classified)}")
+        lines.append(f"🎯 صفقات مؤهلة: {len(deals)} | أُرسل: {sent}")
+        near = sorted((x for x in classified if x.discount_pct > 0), key=lambda x: x.score, reverse=True)[:3]
+        if near and not sent:
+            lines += ["", "أقرب العروض (لم تبلغ الحد المطلوب):"]
+            for x in near:
+                lines.append(f"• {html.escape(x.title[:60])} — {x.price:,.0f} ر.س (خصم {x.discount_pct:.0f}%، درجة {x.score:.0f})")
+        tg.send_text("\n".join(lines))
     return sent
 
 
