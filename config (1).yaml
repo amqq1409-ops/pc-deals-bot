@@ -1,0 +1,302 @@
+# ======= إعدادات صائد صفقات البي سي — وضع "الجودة العالية أولاً" =======
+
+stores:            # فعّل/عطّل المتاجر
+  amazon_sa: true
+  noon: true
+  jarir: true
+  extra: false      # تجريبي: غير مجرَّب على الموقع الحي
+
+# أقل خصم مطلوب حسب جودة المنتج (كلما قلّت الجودة اشترطنا خصماً أكبر)
+tier_min_discount:
+  premium: 50       # 💎 فئة ممتازة: خصم 50% فأكثر
+  high: 60          # ⭐ ماركة موثوقة عادية
+  basic: 75         # 🔹 ماركة غير معروفة: خصم 75% فأكثر + تقييمات قوية
+basic_min_rating: 4.2
+basic_min_reviews: 50
+
+min_discount_pct: 50        # احتياطي فقط
+min_score: 60               # أقل درجة جودة/سعر (من 100)
+max_results_per_run: 8      # أقصى عدد رسائل في كل تشغيل (الممتاز يُرسل أولاً)
+resend_if_drop_pct: 5       # أعد إرسال نفس المنتج فقط لو نزل سعره أكثر من هذه النسبة
+max_discount_suspicious: 92 # خصم أعلى من هذا بلا تقييمات كافية = غالباً سعر أصلي وهمي
+store_time_budget_sec: 330  # أقصى وقت لكل متجر
+
+weights:
+  discount: 45
+  rating: 25
+  reviews: 10
+  brand: 10
+  price_history: 10
+
+min_rating: 4.0
+min_reviews: 10
+
+# مواسم التخفيضات: التواريخ الرسمية للمناسبات مؤكدة، أما نافذة التخفيض الفعلية في كل متجر فتقديرية، عدّلها متى شئت
+season_extra_results: 7     # أثناء الموسم يرسل عدداً أكبر من الصفقات
+seasons:
+  - { name: "يوم العزاب 11.11",        start: "2026-11-09", end: "2026-11-12" }
+  - { name: "الجمعة البيضاء",          start: "2026-11-16", end: "2026-12-02" }
+  - { name: "تخفيضات نهاية العام",     start: "2026-12-15", end: "2027-01-05" }
+  - { name: "رمضان",                  start: "2027-02-01", end: "2027-03-08" }
+  - { name: "يوم التأسيس",            start: "2027-02-18", end: "2027-02-23" }
+  - { name: "عيد الفطر",              start: "2027-03-05", end: "2027-03-14" }
+  - { name: "عيد الأضحى",             start: "2027-05-12", end: "2027-05-20" }
+
+trusted_brands:
+  - Logitech
+  - Razer
+  - Corsair
+  - SteelSeries
+  - HyperX
+  - ASUS
+  - ROG
+  - MSI
+  - Gigabyte
+  - Aorus
+  - NVIDIA
+  - AMD
+  - Intel
+  - Sapphire
+  - Zotac
+  - XFX
+  - PowerColor
+  - PNY
+  - Palit
+  - Gainward
+  - Inno3D
+  - Redragon
+  - Keychron
+  - Glorious
+  - Cooler Master
+  - Royal Kludge
+  - Akko
+  - Ducky
+  - Wooting
+  - Endgame Gear
+  - Zowie
+  - Pulsar
+  - Lamzu
+  - Finalmouse
+  - BenQ
+  - Kingston
+  - Crucial
+  - Samsung
+  - WD
+  - Western Digital
+  - Seagate
+  - SanDisk
+  - G.Skill
+  - Lexar
+  - TeamGroup
+  - ADATA
+  - XPG
+  - LG
+  - Alienware
+  - Dell
+  - AOC
+  - Acer
+  - Predator
+  - ViewSonic
+  - Philips
+  - Sennheiser
+  - Audeze
+  - Beyerdynamic
+  - Shure
+  - Rode
+  - Elgato
+  - Blue
+  - Audio-Technica
+  - Brother
+  - Epson
+  - Canon
+  - HP
+  - Noctua
+  - Arctic
+  - be quiet
+  - Seasonic
+  - Thermaltake
+  - NZXT
+  - Lian Li
+  - Fractal
+  - Hyte
+  - Phanteks
+  - Deepcool
+  - Obsbot
+  - Insta360
+
+# ترتيب الفئات مهم: الأدق أولاً حتى لا يلتبس تصنيف المنتج
+categories:
+  gpu:
+    label: "كرت شاشة"
+    emoji: "🎮"
+    queries: ["RTX 5080 graphics card", "RTX 4070 Super graphics card", "Radeon RX 9070 graphics card", "graphics card"]
+    include_any: ["rtx", "gtx", "radeon", "rx 6", "rx 7", "rx 9", "graphics card", "gpu", "arc a", "arc b"]
+    exclude_any: ["laptop", "notebook", "cable", "bracket", "riser", "support", "holder", "backplate",
+                  "water block", "fan only", "adapter", "extension", "pc case", "gaming pc", "desktop pc",
+                  "prebuilt", "monitor", "mini pc"]
+    premium_keywords: ["rtx 5090", "rtx 5080", "rtx 5070 ti", "rtx 4090", "rtx 4080", "rx 9070 xt", "rx 7900"]
+    premium_ref_price: 3000
+    min_price: 400
+    max_price: 15000
+
+  monitor:
+    label: "شاشة"
+    emoji: "🖥️"
+    queries: ["OLED gaming monitor", "4K gaming monitor", "240Hz gaming monitor", "ultrawide monitor"]
+    include_any: ["monitor"]
+    exclude_any: ["arm", "mount", "stand", "bracket", "cable", "cover", "protector", "tv ", "portable",
+                  "laptop", "gaming pc", "desktop pc", "keyboard", "mouse", "mini pc"]
+    premium_keywords: ["oled", "qd-oled", "4k", "5k", "240hz", "360hz", "480hz", "mini led", "ultrawide", "odyssey neo"]
+    premium_ref_price: 2000
+    min_price: 400
+    max_price: 9000
+
+  motherboard:
+    label: "لوحة أم"
+    emoji: "🧩"
+    queries: ["gaming motherboard AM5", "motherboard Z790", "motherboard Z890", "motherboard X870"]
+    include_any: ["motherboard"]
+    exclude_any: ["server", "mini pc", "bracket", "cover", "laptop", "gaming pc", "desktop pc"]
+    premium_keywords: ["x870e", "x670e", "z890", "rog maximus", "rog crosshair", "aorus master", "carbon wifi", "tomahawk max"]
+    premium_ref_price: 1500
+    min_price: 250
+    max_price: 5000
+
+  cooler:
+    label: "مبرّد معالج"
+    emoji: "❄️"
+    queries: ["AIO liquid cooler 360mm", "CPU air cooler", "liquid cooler"]
+    include_any: ["cpu cooler", "aio", "liquid cooler", "water cooling", "air cooler", "cooler"]
+    exclude_any: ["laptop", "cooling pad", "gpu cooler only", "thermal paste", "phone", "bracket only", "fan only", "cooling fan 120mm single"]
+    premium_keywords: ["360mm", "420mm", "kraken elite", "liquid freezer iii", "noctua nh-d15", "nh-u12a", "dark rock pro", "phantom spirit", "lcd"]
+    premium_ref_price: 450
+    min_price: 80
+    max_price: 2000
+
+  psu:
+    label: "مزوّد طاقة"
+    emoji: "🔌"
+    queries: ["80 plus gold power supply 850W", "1000W power supply ATX 3.1", "modular power supply PSU"]
+    include_any: ["power supply", "psu"]
+    exclude_any: ["laptop", "charger", "phone", "power bank", "ups", "uninterruptible", "tester", "cable", "sleeved",
+                  "extension", "server", "led strip", "router", "adapter for", "camera"]
+    premium_keywords: ["1000w", "1200w", "1300w", "1500w", "1600w", "platinum", "titanium", "atx 3.1", "12v-2x6", "rm1000", "hx1500i"]
+    premium_ref_price: 600
+    min_price: 150
+    max_price: 3000
+
+  case:
+    label: "كيس"
+    emoji: "🗄️"
+    queries: ["PC case ATX mid tower", "airflow PC case", "tempered glass PC case"]
+    include_any: ["pc case", "computer case", "atx case", "mid tower", "full tower", "mid-tower", "full-tower", "itx case"]
+    exclude_any: ["phone", "laptop", "fan only", "stand", "keyboard", "controller", "mini pc"]
+    premium_keywords: ["lian li o11", "o11 dynamic", "fractal torrent", "fractal north", "hyte y70", "hyte y60", "4000d", "5000d", "lancool 216", "lancool 3", "ncase"]
+    premium_ref_price: 500
+    min_price: 150
+    max_price: 2500
+
+  ram:
+    label: "رام"
+    emoji: "🧠"
+    queries: ["DDR5 64GB RAM", "DDR5 32GB desktop RAM", "DDR4 desktop RAM"]
+    include_any: ["ddr4", "ddr5"]
+    exclude_any: ["laptop", "notebook", "sodimm", "so-dimm", "gddr", "graphics card", "rtx", "radeon",
+                  "gaming pc", "desktop pc", "motherboard", "server", "ecc", "mini pc"]
+    premium_keywords: ["64gb", "96gb", "128gb", "cl28", "cl30", "7200mhz", "7600mhz", "8000mhz", "6400mhz"]
+    premium_ref_price: 1200
+    min_price: 100
+    max_price: 4000
+
+  ssd:
+    label: "SSD"
+    emoji: "💾"
+    queries: ["NVMe SSD 2TB", "PCIe 5.0 NVMe SSD", "internal SSD"]
+    include_any: ["ssd", "nvme"]
+    exclude_any: ["enclosure", "case", "adapter", "heatsink", "external", "portable", "caddy", "dock",
+                  "laptop", "notebook", "gaming pc", "desktop pc", "cable", "bracket", "mini pc"]
+    premium_keywords: ["990 pro", "pcie 5.0", "gen5", "t700", "firecuda 540", "sn850x", "2tb", "4tb", "8tb"]
+    premium_ref_price: 700
+    min_price: 100
+    max_price: 4000
+
+  cpu:
+    label: "معالج"
+    emoji: "⚙️"
+    queries: ["AMD Ryzen 7 processor", "Intel Core Ultra processor", "Ryzen 9 processor"]
+    include_any: ["ryzen", "core i", "core ultra", "processor"]
+    exclude_any: ["laptop", "notebook", "cooler", "fan", "thermal", "cooling", "heatsink", "motherboard", "gaming pc",
+                  "desktop pc", "mini pc", "all-in-one", "phone", "compatible"]
+    premium_keywords: ["9800x3d", "9950x3d", "7800x3d", "7950x3d", "14900k", "285k", "core ultra 9", "core ultra 7", "ryzen 9", "core i9"]
+    premium_ref_price: 1500
+    min_price: 300
+    max_price: 6000
+
+  headset:
+    label: "سماعة"
+    emoji: "🎧"
+    queries: ["gaming headset wireless", "Sennheiser headphones", "studio headphones", "SteelSeries Arctis headset"]
+    include_any: ["headset", "headphone"]
+    exclude_any: ["earbuds", "airpods", "kids", "case for", "stand", "cover", "ear pads only", "cable only", "phone"]
+    premium_keywords: ["arctis nova pro", "blackshark v2 pro", "g pro x 2", "sennheiser", "audeze", "beyerdynamic", "hd 800", "hd 6xx", "cloud alpha", "nova 7"]
+    premium_ref_price: 700
+    min_price: 80
+    max_price: 3500
+
+  webcam:
+    label: "كاميرا ويب"
+    emoji: "📷"
+    queries: ["4K webcam", "streaming webcam"]
+    include_any: ["webcam", "web cam"]
+    exclude_any: ["cover", "mount only", "tripod only", "ring light only", "security camera"]
+    premium_keywords: ["brio", "kiyo pro", "streamcam", "obsbot", "insta360 link", "facecam", "4k"]
+    premium_ref_price: 450
+    min_price: 100
+    max_price: 2000
+
+  microphone:
+    label: "مايك"
+    emoji: "🎙️"
+    queries: ["USB condenser microphone", "XLR dynamic microphone", "streaming microphone"]
+    include_any: ["microphone", "usb mic", "condenser mic"]
+    exclude_any: ["headset", "headphone", "webcam", "karaoke", "lavalier", "lapel", "wireless lavalier", "arm", "stand only",
+                  "pop filter", "windscreen", "for phone", "speaker"]
+    premium_keywords: ["shure", "sm7b", "sm58", "rode", "blue yeti x", "elgato wave", "quadcast", "at2020", "neumann", "procaster"]
+    premium_ref_price: 500
+    min_price: 100
+    max_price: 4000
+
+  printer:
+    label: "طابعة"
+    emoji: "🖨️"
+    queries: ["laser printer", "ink tank printer", "all-in-one printer wireless"]
+    include_any: ["printer"]
+    exclude_any: ["3d", "cartridge", "toner", "refill", "paper", "cover", "stand", "drum", "sticker", "photo paper"]
+    premium_keywords: ["laserjet pro", "color laser", "ecotank", "brother mfc", "pixma g", "workforce pro"]
+    premium_ref_price: 1200
+    min_price: 200
+    max_price: 6000
+
+  keyboard:
+    label: "كيبورد"
+    emoji: "⌨️"
+    queries: ["Wooting keyboard", "wireless mechanical keyboard", "gaming keyboard", "mechanical keyboard"]
+    include_any: ["keyboard"]
+    exclude_any: ["cover", "skin", "protector", "keycap set", "keycaps set", "wrist rest", "piano", "midi",
+                  "for ipad", "for macbook", "kids", "stand", "case for", "sticker", "cleaner", "puller"]
+    premium_keywords: ["wooting", "keychron q", "keychron v", "akko", "ducky", "rapid trigger", "hall effect", "magnetic switch", "apex pro", "huntsman", "blackwidow v4 pro"]
+    premium_ref_price: 600
+    min_price: 120
+    max_price: 3500
+
+  mouse:
+    label: "ماوس"
+    emoji: "🖱️"
+    queries: ["Logitech G Pro mouse", "wireless gaming mouse", "gaming mouse"]
+    include_any: ["mouse", "mice"]
+    exclude_any: ["pad", "mousepad", "skates", "grip tape", "bungee", "cover", "case for", "trackball",
+                  "bluetooth travel", "for ipad", "stand", "cleaner"]
+    premium_keywords: ["superlight", "viper v3 pro", "deathadder v3 pro", "g pro x", "g pro 2", "model o", "pulsar", "lamzu", "finalmouse", "zowie", "dragonfly"]
+    premium_ref_price: 450
+    min_price: 80
+    max_price: 2500
