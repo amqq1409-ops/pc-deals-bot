@@ -4,18 +4,42 @@ stores:            # فعّل/عطّل المتاجر
   amazon_sa: true
   noon: true
   jarir: true
-  extra: false      # تجريبي: غير مجرَّب على الموقع الحي
+  extra: true       # تجريبي: لو رجّع صفر يُتخطى بسرعة بعد 3 محاولات
+
+# متاجر إضافية بلا برمجة: أضف أي متجر Shopify (type: shopify + base) أو أي متجر آخر (type: jsonld + search_path فيه {q}).
+# experimental: true = لا ترسل تحذير يومي لو لم يعط نتائج (النتيجة تظهر في التقرير اليدوي والسجل).
+custom_stores:
+  # ----- ألعاب (واجهة ستيم الرسمية بالريال) -----
+  - {key: steam, name_ar: "ستيم", type: steam, experimental: false}
+  # ----- أمازون عالمياً (الأسعار تتحول للريال بحسب rate_to_sar، عدّلها عند تغيّر العملات) -----
+  - {key: amazon_us, name_ar: "أمازون أمريكا", type: amazon, base: "https://www.amazon.com", rate_to_sar: 3.75, imported: true, experimental: true}
+  - {key: amazon_uk, name_ar: "أمازون بريطانيا", type: amazon, base: "https://www.amazon.co.uk", rate_to_sar: 4.9, imported: true, experimental: true}
+  - {key: amazon_de, name_ar: "أمازون ألمانيا", type: amazon, base: "https://www.amazon.de", rate_to_sar: 4.3, imported: true, experimental: true}
+  - {key: amazon_ae, name_ar: "أمازون الإمارات", type: amazon, base: "https://www.amazon.ae", rate_to_sar: 1.02, imported: true, experimental: true}
+  # ----- متاجر قطع البي سي (قراءة JSON-LD؛ قد تُحظر أو تحتاج تعديلاً: النتيجة تظهر في التقرير اليدوي) -----
+  - {key: sharafdg, name_ar: "شرف دي جي", type: jsonld, base: "https://ksa.sharafdg.com", search_path: "/?q={q}&post_type=product", experimental: true}
+  - {key: newegg, name_ar: "نيو إيج", type: jsonld, base: "https://www.newegg.com", search_path: "/p/pl?d={q}", rate_to_sar: 3.75, imported: true, experimental: true}
+  - {key: bhphoto, name_ar: "B&H", type: jsonld, base: "https://www.bhphotovideo.com", search_path: "/c/search?q={q}", rate_to_sar: 3.75, imported: true, experimental: true}
+  - {key: scan, name_ar: "Scan (بريطانيا)", type: jsonld, base: "https://www.scan.co.uk", search_path: "/search?q={q}", rate_to_sar: 4.9, imported: true, experimental: true}
+  - {key: overclockers, name_ar: "Overclockers UK", type: jsonld, base: "https://www.overclockers.co.uk", search_path: "/search?sSearch={q}", rate_to_sar: 4.9, imported: true, experimental: true}
+  - {key: caseking, name_ar: "Caseking (ألمانيا)", type: jsonld, base: "https://www.caseking.de", search_path: "/search?sSearch={q}", rate_to_sar: 4.3, imported: true, experimental: true}
+  # مثال Shopify: - {key: myshop, name_ar: "اسم المتجر", type: shopify, base: "https://example-store.com", experimental: true}
+
+# الألعاب: لا تقييمات في واجهة ستيم، فنشترط خصماً كبيراً وسعراً أصلياً معتبراً
+games_min_discount: 70
+games_min_original: 100
+total_time_budget_sec: 840     # سقف زمني كلي للتشغيل (14 دقيقة) كي لا يتجاوز حد GitHub
 
 # أقل خصم مطلوب حسب جودة المنتج (كلما قلّت الجودة اشترطنا خصماً أكبر)
 tier_min_discount:
-  premium: 50       # 💎 فئة ممتازة: خصم 50% فأكثر
-  high: 60          # ⭐ ماركة موثوقة عادية
-  basic: 75         # 🔹 ماركة غير معروفة: خصم 75% فأكثر + تقييمات قوية
+  premium: 35       # 💎 فئة ممتازة: خصم 35% فأكثر
+  high: 50          # ⭐ ماركة موثوقة عادية
+  basic: 70         # 🔹 ماركة غير معروفة: خصم 70% فأكثر + تقييمات قوية
 basic_min_rating: 4.2
 basic_min_reviews: 50
 
-min_discount_pct: 50        # احتياطي فقط
-min_score: 60               # أقل درجة جودة/سعر (من 100)
+min_discount_pct: 35        # احتياطي فقط
+min_score: 55               # أقل درجة جودة/سعر (من 100)
 max_results_per_run: 8      # أقصى عدد رسائل في كل تشغيل (الممتاز يُرسل أولاً)
 resend_if_drop_pct: 5       # أعد إرسال نفس المنتج فقط لو نزل سعره أكثر من هذه النسبة
 max_discount_suspicious: 92 # خصم أعلى من هذا بلا تقييمات كافية = غالباً سعر أصلي وهمي
@@ -126,6 +150,14 @@ trusted_brands:
 
 # ترتيب الفئات مهم: الأدق أولاً حتى لا يلتبس تصنيف المنتج
 categories:
+  games:
+    label: "لعبة"
+    emoji: "🕹️"
+    queries: ["specials"]
+    include_any: []
+    min_price: 0
+    max_price: 10000
+
   gpu:
     label: "كرت شاشة"
     emoji: "🎮"
