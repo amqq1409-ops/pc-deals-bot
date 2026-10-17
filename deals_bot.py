@@ -55,6 +55,7 @@ class Product:
     historical_low: bool = False
     tier: str = ""      # premium / high / basic
     season: str = ""
+    imported: bool = False   # شحن دولي (جمارك/ضريبة/ضمان)
 
     @property
     def key(self) -> str:
@@ -137,6 +138,8 @@ from bs4 import BeautifulSoup
 class AmazonSA(BaseScraper):
     name = "amazon_sa"
     BASE = "https://www.amazon.sa"
+    rate = 1.0          # ريال لكل وحدة عملة المتجر
+    imported = False
 
     def search(self, query: str) -> List[Product]:
         url = f"{self.BASE}/s?k={quote_plus(query)}&language=en_AE"
@@ -190,7 +193,28 @@ class AmazonSA(BaseScraper):
                 image=img.get("src") if img else None,
                 sku=asin,
             ))
+        if self.rate != 1.0:
+            for p in out:
+                p.price = round(p.price * self.rate, 2)
+                p.original_price = round(p.original_price * self.rate, 2) if p.original_price else None
+        for p in out:
+            p.imported = self.imported
         return out
+
+
+class AmazonGlobal(AmazonSA):
+    """أمازون في دول أخرى (com / co.uk / de / ae ...). نفس المحلل، مع تحويل العملة للريال."""
+
+    def __init__(self, name: str, base: str, rate: float):
+        super().__init__()
+        self.name = name
+        self.BASE = base.rstrip("/")
+        self.rate = rate
+        self.imported = True
+
+    def search(self, query: str) -> List[Product]:
+        r = self.get(f"{self.BASE}/s?k={quote_plus(query)}")
+        return self.parse(r.text) if r else []
 
 
 # ===== scrapers/noon.py =====
@@ -414,6 +438,106 @@ class Extra(BaseScraper):
         return out
 
 
+class ShopifyStore(BaseScraper):
+    """أي متجر مبني على Shopify: يستخدم واجهة البحث المدمجة (search/suggest.json) وتحمل السعر قبل الخصم.
+    لإضافة متجر: ضعه في custom_stores في config.yaml بـ type: shopify و base."""
+
+    def __init__(self, name: str, base: str, rate: float = 1.0, imported: bool = False):
+        super().__init__()
+        self.name = name
+        self.BASE = base.rstrip("/")
+        self.rate = rate
+        self.imported = imported
+
+    def search(self, query: str) -> List[Product]:
+        url = (f"{self.BASE}/search/suggest.json?q={quote_plus(query)}"
+               f"&resources[type]=product&resources[limit]=10&resources[options][unavailable_products]=hide")
+        if self.deadline and time.monotonic() > self.deadline:
+            return []
+        try:
+            time.sleep(self.delay + random.random())
+            r = self.session.get(url, timeout=15, headers={"Accept": "application/json"})
+            if r.status_code != 200:
+                log.warning("%s: HTTP %s", self.name, r.status_code)
+                return []
+            return self.parse(r.text)
+        except (requests.RequestException, ValueError) as e:
+            log.warning("%s: خطأ %s", self.name, e)
+            return []
+
+    def parse(self, text: str) -> List[Product]:
+        data = json.loads(text)
+        items = (((data.get("resources") or {}).get("results") or {}).get("products")) or []
+        out: List[Product] = []
+        for it in items:
+            price = parse_price(it.get("price"))
+            if not price or not it.get("title") or not it.get("url"):
+                continue
+            was = parse_price(it.get("compare_at_price_max") or it.get("compare_at_price_min"))
+            if was is not None and was <= price:
+                was = None
+            img = it.get("image") or (it.get("featured_image") or {}).get("url")
+            out.append(Product(
+                store=self.name, title=str(it["title"]), url=self.BASE + str(it["url"]).split("?")[0],
+                price=round(price * self.rate, 2),
+                original_price=round(was * self.rate, 2) if was else None, rating=None, reviews=0,
+                image=img if isinstance(img, str) else None,
+                sku=str(it.get("id") or it["url"]), brand=it.get("vendor"), imported=self.imported,
+            ))
+        return out
+
+
+class JsonLdStore(Extra):
+    """متجر عام يقرأ JSON-LD (schema.org) من صفحة البحث. search_path يحوي {q}.
+    ملاحظة: JSON-LD لا يحمل السعر قبل الخصم غالباً، فالخصم لا يظهر إلا لو وُجد."""
+
+    def __init__(self, name: str, base: str, search_path: str, rate: float = 1.0, imported: bool = False):
+        super().__init__()
+        self.name = name
+        self.BASE = base.rstrip("/")
+        self.search_path = search_path
+        self.rate = rate
+        self.imported = imported
+
+    def search(self, query: str) -> List[Product]:
+        r = self.get(self.BASE + self.search_path.replace("{q}", quote_plus(query)))
+        if not r:
+            return []
+        out = self.parse(r.text)
+        for p in out:
+            p.price = round(p.price * self.rate, 2)
+            p.imported = self.imported
+        return out
+
+
+class SteamSpecials(BaseScraper):
+    """عروض ستيم الرسمية بالريال السعودي (واجهة المتجر العامة). تُصنَّف تلقائياً كفئة «ألعاب»."""
+    name = "steam"
+
+    def search(self, query: str) -> List[Product]:
+        if query != "specials":
+            return []
+        if self.deadline and time.monotonic() > self.deadline:
+            return []
+        try:
+            r = self.session.get("https://store.steampowered.com/api/featuredcategories?cc=sa&l=english", timeout=15)
+            data = r.json()
+        except (requests.RequestException, ValueError) as e:
+            log.warning("steam: خطأ %s", e)
+            return []
+        out: List[Product] = []
+        for sec in ("specials", "top_sellers", "new_releases"):
+            for it in (data.get(sec) or {}).get("items", []):
+                disc, fin, orig = it.get("discount_percent", 0), it.get("final_price"), it.get("original_price")
+                if not (it.get("name") and fin and orig and disc and it.get("id")):
+                    continue
+                out.append(Product(
+                    store="steam", title=it["name"], url=f"https://store.steampowered.com/app/{it['id']}/",
+                    price=fin / 100, original_price=orig / 100, image=it.get("large_capsule_image"),
+                    sku=str(it["id"]), category="games", tier="basic"))
+        return out
+
+
 # ===== scoring.py =====
 
 import math
@@ -424,6 +548,8 @@ from typing import Dict, List, Optional
 
 def classify(p: Product, categories: dict) -> Optional[str]:
     """يرجع اسم الفئة لو المنتج يطابقها، وإلا None."""
+    if p.category and p.category in categories:   # فئة محددة مسبقاً (مثل ألعاب ستيم)
+        return p.category
     t = p.title.lower()
     for name, c in categories.items():
         if not any(k.lower() in t for k in c["include_any"]):
@@ -501,6 +627,9 @@ TIER_RANK = {"premium": 0, "high": 1, "basic": 2}
 
 def assign_tier(p: Product, cfg: dict) -> str:
     """💎 ممتاز: موديل راقٍ (كلمات مفتاحية) أو ماركة موثوقة بسعر قائمة مرتفع. ⭐ موثوق: ماركة موثوقة. 🔹 أساسي: غير ذلك."""
+    if p.category == "games":
+        p.tier = "basic"
+        return p.tier
     cat = cfg["categories"].get(p.category) or {}
     t = p.title.lower()
     brand = find_brand(p, cfg["trusted_brands"])
@@ -518,6 +647,8 @@ def assign_tier(p: Product, cfg: dict) -> str:
 
 def is_good_deal(p: Product, cfg: dict) -> bool:
     d = p.discount_pct
+    if p.category == "games":   # الألعاب بلا تقييمات في الواجهة: خصم كبير + سعر أصلي معتبر فقط
+        return d >= cfg.get("games_min_discount", 70) and (p.original_price or 0) >= cfg.get("games_min_original", 100)
     tier = p.tier or ("high" if find_brand(p, cfg["trusted_brands"]) else "basic")
     need = cfg.get("tier_min_discount", {}).get(tier, cfg["min_discount_pct"])
     if d < need:
@@ -635,6 +766,8 @@ def format_message(p: Product, cat_label: str, emoji: str = "🔥") -> str:
         lines.append(f"⭐ {p.rating:.1f} ({p.reviews:,} تقييم)")
     for r in p.reasons:
         lines.append(f"✅ {e(r)}" if not r.startswith("⚠️") else e(r))
+    if p.imported:
+        lines.append("🌍 شحن دولي: أضف الجمارك وضريبة القيمة المضافة، وتأكد أن المتجر يشحن للسعودية وأن الضمان يُغطي عندك")
     if p.store == "amazon_sa":
         lines.append("⚠️ تأكد أن البائع «أمازون» وأن المنتج جديد قبل الشراء")
     lines.append("")
@@ -698,17 +831,47 @@ log = logging.getLogger("dealhunter")
 ROOT = Path(__file__).resolve().parent
 
 
+def build_scrapers(cfg: dict) -> Dict[str, BaseScraper]:
+    out: Dict[str, BaseScraper] = {}
+    for store, enabled in cfg["stores"].items():
+        if enabled and store in SCRAPERS:
+            out[store] = SCRAPERS[store]()
+    for cs in cfg.get("custom_stores") or []:
+        if not cs.get("enabled", True):
+            continue
+        key = cs["key"]
+        STORE_NAMES_AR[key] = cs.get("name_ar", key)
+        rate, imp = float(cs.get("rate_to_sar", 1.0)), bool(cs.get("imported", False))
+        if cs["type"] == "shopify":
+            out[key] = ShopifyStore(key, cs["base"], rate, imp)
+        elif cs["type"] == "jsonld":
+            out[key] = JsonLdStore(key, cs["base"], cs["search_path"], rate, imp)
+        elif cs["type"] == "amazon":
+            out[key] = AmazonGlobal(key, cs["base"], rate)
+        elif cs["type"] == "steam":
+            out[key] = SteamSpecials()
+        else:
+            log.warning("نوع متجر غير معروف: %s", cs["type"])
+            continue
+        out[key].experimental = bool(cs.get("experimental", True))
+    return out
+
+
 def collect(cfg: dict) -> tuple[List[Product], Dict[str, int]]:
     products: Dict[str, Product] = {}
     per_store: Dict[str, int] = {}
-    for store, enabled in cfg["stores"].items():
-        if not enabled or store not in SCRAPERS:
+    run_deadline = time.monotonic() + cfg.get("total_time_budget_sec", 840)
+    for store, scraper in build_scrapers(cfg).items():
+        if time.monotonic() > run_deadline:
+            log.warning("انتهت الميزانية الكلية للوقت: تخطي %s", store)
+            per_store.setdefault(store, 0)
             continue
-        scraper = SCRAPERS[store]()
-        scraper.deadline = time.monotonic() + cfg.get("store_time_budget_sec", 240)
+        scraper.deadline = min(time.monotonic() + cfg.get("store_time_budget_sec", 240), run_deadline)
         per_store[store] = 0
         empty_streak = 0
         for cat_name, cat in cfg["categories"].items():
+            if (cat_name == "games") != isinstance(scraper, SteamSpecials):
+                continue   # فئة الألعاب لستيم فقط، وستيم لا يبحث إلا فيها
             for q in cat["queries"]:
                 if empty_streak >= 3:
                     break  # المتجر غالباً يحظرنا: نتخطاه بدل إضاعة الوقت
@@ -743,7 +906,8 @@ def run(cfg: dict, state: State, tg: Telegram, only_stores: list[str] | None = N
 
     # تنبيه لو متجر رجّع صفر نتائج (غالباً حظر أو تغيّر في الموقع)
     for store, n in per_store.items():
-        if n == 0 and state.should_warn(store):
+        exp = any(c.get("key") == store and c.get("experimental", True) for c in cfg.get("custom_stores") or [])
+        if n == 0 and not exp and state.should_warn(store):
             tg.send_text(f"⚠️ لم أحصل على أي نتائج من {STORE_NAMES_AR.get(store, store)} — "
                          f"غالباً تم حظر الطلبات أو تغيّر تصميم الموقع. راجع سجل التشغيل في GitHub Actions.")
 
@@ -772,6 +936,27 @@ def run(cfg: dict, state: State, tg: Telegram, only_stores: list[str] | None = N
             state.mark_sent(p)
             sent += 1
     log.info("تم فحص %d منتج، صفقات مؤهلة %d، أُرسل %d", len(products), len(deals), sent)
+
+    # إحصاءات تشخيصية: لنعرف لماذا لا توجد صفقات
+    with_disc = [x for x in classified if x.discount_pct > 0]
+    ge30 = sum(1 for x in with_disc if x.discount_pct >= 30)
+    ge50 = sum(1 for x in with_disc if x.discount_pct >= 50)
+    top_disc = sorted(with_disc, key=lambda x: x.discount_pct, reverse=True)[:5]
+    log.info("مطابق للفئات %d | منها بخصم معلن %d | خصم ≥30%%: %d | ≥50%%: %d",
+             len(classified), len(with_disc), ge30, ge50)
+    for x in top_disc:
+        log.info("  أعلى خصم: %s | %s | %.0f ر.س | خصم %.0f%% | تقييم %s (%s) | درجة %.0f | %s",
+                 x.store, x.title[:50], x.price, x.discount_pct, x.rating, x.reviews, x.score, x.tier)
+
+    # نبض يومي: لو لم يُرسل شيء، أرسل (مرة واحدة يومياً) أن البوت حي مع ملخص
+    if not sent and os.getenv("GITHUB_EVENT_NAME") != "workflow_dispatch" and state.should_warn("heartbeat"):
+        msg = [f"💤 <b>البوت يعمل</b> — لا توجد صفقة تجتاز الفلتر الآن.",
+               f"فحصت {len(products)} منتجاً ({len(classified)} مطابق للفئات)، منها {ge30} بخصم ≥30% و{ge50} بخصم ≥50%."]
+        if top_disc:
+            msg.append("أعلى خصومات وُجدت:")
+            for x in top_disc[:3]:
+                msg.append(f"• {html.escape(x.title[:55])} — {x.price:,.0f} ر.س (خصم {x.discount_pct:.0f}%)")
+        tg.send_text("\n".join(msg))
 
     # تقرير يصلك على تلقرام عند التشغيل اليدوي فقط (لتتأكد أن كل شيء يعمل)
     if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
