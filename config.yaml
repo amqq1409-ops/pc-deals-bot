@@ -4,7 +4,45 @@ stores:
   jarir: true
   extra: false
 
+custom_stores:
+  - key: steam
+    enabled: true
+    type: steam
+    name_ar: "ستيم"
+    experimental: false
+
+  - key: amazon_us
+    enabled: true
+    type: amazon
+    base: "https://www.amazon.com"
+    rate_to_sar: 3.75
+    imported: true
+    name_ar: "أمازون العالمية"
+    experimental: false
+
 categories:
+  gaming:
+    queries:
+      - "specials"
+      - "pc game"
+      - "gaming"
+    include_any:
+      - steam
+      - game
+      - gaming
+      - pc game
+    exclude_any:
+      - keyboard
+      - mouse
+      - monitor
+    min_price: 20
+    max_price: 500
+    label: "ألعاب"
+    emoji: "🎲"
+    premium_keywords:
+      - deluxe
+      - edition
+
   keyboards:
     queries:
       - "keyboard"
@@ -20,7 +58,6 @@ categories:
       - mouse
       - monitor
       - headset
-      - chair
     min_price: 100
     max_price: 3000
     label: "لوحة مفاتيح"
@@ -36,12 +73,10 @@ categories:
       - "mouse"
       - "gaming mouse"
       - "wireless mouse"
-      - "rgb mouse"
     include_any:
       - mouse
       - gaming
       - wireless
-      - rgb
     exclude_any:
       - keyboard
       - monitor
@@ -60,12 +95,10 @@ categories:
       - "monitor"
       - "gaming monitor"
       - "ips monitor"
-      - "led monitor"
     include_any:
       - monitor
       - gaming
       - ips
-      - led
     exclude_any:
       - keyboard
       - mouse
@@ -78,79 +111,6 @@ categories:
       - ips
       - 144hz
       - 165hz
-      - 240hz
-
-  headsets:
-    queries:
-      - "headset"
-      - "gaming headset"
-      - "wireless headset"
-      - "headphones"
-    include_any:
-      - headset
-      - gaming
-      - wireless
-      - headphones
-    exclude_any:
-      - keyboard
-      - mouse
-      - monitor
-    min_price: 100
-    max_price: 2000
-    label: "سماعات"
-    emoji: "🎧"
-    premium_keywords:
-      - wireless
-      - gaming
-      - bluetooth
-
-  graphics:
-    queries:
-      - "graphics card"
-      - "gpu"
-      - "geforce"
-      - "rtx"
-      - "rx"
-    include_any:
-      - graphics card
-      - gpu
-      - geforce
-      - rtx
-      - rx
-    exclude_any:
-      - monitor
-      - keyboard
-      - mouse
-    min_price: 700
-    max_price: 20000
-    label: "كرت شاشة"
-    emoji: "🎮"
-    premium_keywords:
-      - rtx
-      - geforce
-      - quadro
-
-  gaming:
-    queries:
-      - "steam"
-      - "pc game"
-      - "game"
-      - "gaming"
-    include_any:
-      - steam
-      - game
-      - gaming
-    exclude_any:
-      - keyboard
-      - mouse
-      - monitor
-    min_price: 20
-    max_price: 500
-    label: "ألعاب"
-    emoji: "🎲"
-    premium_keywords:
-      - deluxe
-      - edition
 
 trusted_brands:
   - Logitech
@@ -169,8 +129,6 @@ trusted_brands:
   - JBL
   - SteelSeries
   - HyperX
-  - WD
-  - Kingston
   - Nvidia
   - AMD
 
@@ -181,24 +139,24 @@ weights:
   brand: 10
   price_history: 10
 
-min_discount_pct: 25
-max_discount_suspicious: 80
-min_reviews: 20
-min_rating: 4.2
-min_score: 50
-basic_min_rating: 4.2
-basic_min_reviews: 50
-games_min_discount: 70
-games_min_original: 100
+min_discount_pct: 15
+max_discount_suspicious: 90
+min_reviews: 10
+min_rating: 3.8
+min_score: 20
+basic_min_rating: 3.8
+basic_min_reviews: 20
+games_min_discount: 60
+games_min_original: 50
 
 resend_if_drop_pct: 10
-max_results_per_run: 8
+max_results_per_run: 20
 season_extra_results: 0
 
 tier_min_discount:
-  premium: 20
-  high: 25
-  basic: 30
+  premium: 15
+  high: 18
+  basic: 20
 
 custom_stores: []
 seasons: []
