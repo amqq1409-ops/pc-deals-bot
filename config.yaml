@@ -6,11 +6,16 @@ stores:
 
 categories:
   keyboards:
+    queries:
+      - "keyboard"
+      - "gaming keyboard"
+      - "mechanical keyboard"
+      - "rgb keyboard"
     include_any:
       - keyboard
-      - gaming keyboard
-      - mechanical keyboard
-      - rgb keyboard
+      - gaming
+      - mechanical
+      - rgb
     exclude_any:
       - mouse
       - monitor
@@ -23,14 +28,20 @@ categories:
     premium_keywords:
       - mechanical
       - rgb
-      - gaming
       - wireless
+      - gaming
+
   mice:
+    queries:
+      - "mouse"
+      - "gaming mouse"
+      - "wireless mouse"
+      - "rgb mouse"
     include_any:
       - mouse
-      - gaming mouse
-      - wireless mouse
-      - rgb mouse
+      - gaming
+      - wireless
+      - rgb
     exclude_any:
       - keyboard
       - monitor
@@ -43,12 +54,18 @@ categories:
       - wireless
       - gaming
       - ergonomic
+
   monitors:
+    queries:
+      - "monitor"
+      - "gaming monitor"
+      - "ips monitor"
+      - "led monitor"
     include_any:
       - monitor
-      - gaming monitor
-      - led monitor
-      - ips monitor
+      - gaming
+      - ips
+      - led
     exclude_any:
       - keyboard
       - mouse
@@ -62,12 +79,18 @@ categories:
       - 144hz
       - 165hz
       - 240hz
+
   headsets:
+    queries:
+      - "headset"
+      - "gaming headset"
+      - "wireless headset"
+      - "headphones"
     include_any:
       - headset
+      - gaming
+      - wireless
       - headphones
-      - gaming headset
-      - wireless headset
     exclude_any:
       - keyboard
       - mouse
@@ -80,7 +103,14 @@ categories:
       - wireless
       - gaming
       - bluetooth
+
   graphics:
+    queries:
+      - "graphics card"
+      - "gpu"
+      - "geforce"
+      - "rtx"
+      - "rx"
     include_any:
       - graphics card
       - gpu
@@ -99,12 +129,17 @@ categories:
       - rtx
       - geforce
       - quadro
+
   gaming:
+    queries:
+      - "steam"
+      - "pc game"
+      - "game"
+      - "gaming"
     include_any:
       - steam
       - game
-      - pc game
-      - game bundle
+      - gaming
     exclude_any:
       - keyboard
       - mouse
@@ -136,7 +171,6 @@ trusted_brands:
   - HyperX
   - WD
   - Kingston
-  - Samsung SSD
   - Nvidia
   - AMD
 
@@ -167,7 +201,4 @@ tier_min_discount:
   basic: 30
 
 custom_stores: []
-
-stores_list: []
-
 seasons: []
