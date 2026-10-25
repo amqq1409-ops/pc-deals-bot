@@ -522,6 +522,22 @@ import statistics
 from typing import Dict, List, Optional
 
 
+def extract_refresh_hz(title: str) -> Optional[float]:
+    if not title:
+        return None
+    text = title.lower()
+    for pattern in (r"(\d{2,4})\s*(?:hz|hertz|herz)", r"(\d{2,4})\s*(?:fps)"):
+        m = re.search(pattern, text)
+        if m:
+            try:
+                val = float(m.group(1))
+            except ValueError:
+                continue
+            if val >= 60:
+                return val
+    return None
+
+
 def classify(p: Product, categories: dict) -> Optional[str]:
     if p.category and p.category in categories:
         return p.category
@@ -531,6 +547,10 @@ def classify(p: Product, categories: dict) -> Optional[str]:
             continue
         if any(k.lower() in t for k in c.get("exclude_any", [])):
             continue
+        if name == "monitors":
+            hz = extract_refresh_hz(t)
+            if hz is None or hz < 240:
+                continue
         if not (c.get("min_price", 0) <= p.price <= c.get("max_price", 10**9)):
             continue
         return name
@@ -728,7 +748,7 @@ def format_message(p: Product, cat_label: str, emoji: str = "🔥") -> str:
     for r in p.reasons:
         lines.append(f"✅ {e(r)}" if not r.startswith("⚠️") else e(r))
     if p.imported:
-        lines.append("🌍 شحن دولي: أضف الجمارك وضريبة القيمة المضافة، وتأكد أن المتجر يشحن للسعودية وأن الضمان يُغطي المنتج")
+        lines.append("🌍 شحن دولي: أضف الجمارك وضريبة القيمة المضافة، وتأكد أن المتجر يشحن للسعودية وأن الضمان يُغطي المنتج.")
     if p.store == "amazon_sa":
         lines.append("⚠️ تأكد أن البائع «أمازون» وأن المنتج جديد قبل الشراء")
     lines.append("")
